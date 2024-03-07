@@ -9,7 +9,6 @@ const Login = ({ navigation }) => {
     const [password, setPassword] = useState('');
     const Stack = createStackNavigator();
     const handleLogin = async () => {
-        
         try {
             const response = await fetch(`${apiUrl}/login`, {
                 method: 'POST',
