@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, PermissionsAndroid } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons'; // Import Ionicons from Expo for the 3-dot icon
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -8,7 +8,10 @@ import apiUrl from './apiUrl';
 import axios from 'axios';
 import ListGames from './ListGames';
 
-
+let ToastAndroid;
+if (Platform.OS === 'android') {
+    ToastAndroid = require('react-native').ToastAndroid;
+}
 
 const MainPage = ({ navigation, route: routeProp }) => {
     const [menuVisible, setMenuVisible] = useState(false);
@@ -49,24 +52,7 @@ const MainPage = ({ navigation, route: routeProp }) => {
     const handleSignOut = () => {
         navigation.navigate('Login');
     };
-    const [gameData, setGameData] = useState([]);
 
-    // useEffect(() => {
-    //     const fetchData = async () => {
-    //         try {
-    //             const response = await axios.get(`${apiUrl}/getGameData`);
-
-    //             if (response.data.ok) {
-    //                 setGameData(response.data.gameData);
-    //             } else {
-    //                 console.error('Error fetching travel data:', response.data.message);
-    //             }
-    //         } catch (error) {
-    //             console.error('Error fetching travel data:', error);
-    //         }
-    //     };
-    //     fetchData();
-    // }, []);
     console.log('MAIN PAGE')
     console.log(usersData)
     return (
@@ -86,6 +72,11 @@ const MainPage = ({ navigation, route: routeProp }) => {
                     <View style={styles.menu}>
                         <Text style={styles.menuItem}><FontAwesome5 name="user" size={24} color="white" />   {userName}</Text>
                         <Text style={styles.menuItem}><FontAwesome5 name="user-cog" size={24} color="white" />  {routeProp.params.user.role.charAt(0).toUpperCase() + routeProp.params.user.role.slice(1)}</Text>
+                        {Platform.OS !== 'android' && (
+                        <TouchableOpacity onPress={addNewVideoGame}>
+                            <Text style={styles.menuItem}> <FontAwesome5 name="plus" size={24} color="white" /> Add Game </Text>
+                        </TouchableOpacity>
+)}
                         <TouchableOpacity onPress={handleSignOut}>
                             <Text style={styles.menuItem}><FontAwesome5 name="sign-out-alt" size={24} color="white" />   Sign Out</Text>
                         </TouchableOpacity>
@@ -94,9 +85,11 @@ const MainPage = ({ navigation, route: routeProp }) => {
             </View>
             <ListGames usersData={usersData} />
             <View style={styles.containerMain}>
-                <TouchableOpacity style={styles.addButton} onPress={addNewVideoGame}>
+            {Platform.OS == 'android' && (
+                <TouchableOpacity style={[styles.addButton, styles.androidButton]} onPress={addNewVideoGame}>
                     <FontAwesome5 name="plus" size={24} color="white" />
                 </TouchableOpacity>
+            )}
             </View>
         </View>
     );
@@ -121,7 +114,8 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'white',
         flexDirection: 'column',
-        justifyContent: 'flex-end', // Aligns the circular button to the bottom of the view
+        justifyContent: 'flex-end',
+    alignItems: 'flex-end', // Align to the right
     },
     menuButton: {
         marginRight: 10,
@@ -152,10 +146,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 20, // Adjust as needed
         marginRight: 20, // Adjust as needed
-        position: 'absolute',
-        bottom: 20, // Adjust as needed
-        right: 20, // Adjust as needed
+        bottom: 40, // Adjust as needed
+       // right: 10, // Adjust as needed
+      // left:60,
+      right:1,
         zIndex: 9999, // Ensure it's displayed on top
+    },
+    androidButton: {
+        right: 1, // Adjust as needed
     },
 });
 

@@ -1,34 +1,47 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ToastAndroid, ScrollView } from 'react-native';
+import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, Platform, ScrollView } from 'react-native';
 import { FontAwesome, FontAwesome5, AntDesign } from '@expo/vector-icons';
 import { createStackNavigator } from '@react-navigation/stack';
 import apiUrl from './apiUrl';
-
+import axios from 'axios';
+let ToastAndroid;
+if (Platform.OS === 'android') {
+    ToastAndroid = require('react-native').ToastAndroid;
+}
 const Login = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const Stack = createStackNavigator();
     const handleLogin = async () => {
+        console.log( email,
+            password)
+       // navigation.navigate('MainPage', { user: result.user });
+
         try {
-            const response = await fetch(`${apiUrl}/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
+            const response = await axios.post(`${apiUrl}/login`, {
+                email,
+                password
             });
 
-            const result = await response.json();
+            const result = response.data;
 
-            if (response.ok) {
-                console.log(result.user)
+            if (response.status === 200) {
+                console.log(result.user);
                 navigation.navigate('MainPage', { user: result.user });
             } else {
-                ToastAndroid.show(result.message, ToastAndroid.SHORT);
+                if (ToastAndroid) {
+                    ToastAndroid.show(result.message, ToastAndroid.SHORT);
+                } else {
+                    alert(result.message);
+                }
             }
         } catch (error) {
             console.error('Error during login:', error);
-            ToastAndroid.show('Error during login', ToastAndroid.SHORT);
+            if (ToastAndroid) {
+                ToastAndroid.show('Error during login', ToastAndroid.SHORT);
+            } else {
+                alert('Error during login');
+            }
         }
     };
     const handleRegisterNow = () => {

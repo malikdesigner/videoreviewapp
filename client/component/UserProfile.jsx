@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ToastAndroid } from 'react-native';
+import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { CheckBox } from 'react-native-elements';
 import { Picker } from '@react-native-picker/picker';
 import apiUrl from './apiUrl';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+
+let ToastAndroid;
+if (Platform.OS === 'android') {
+    ToastAndroid = require('react-native').ToastAndroid;
+}
 
 const UserProfile = () => {
 
@@ -40,13 +46,14 @@ const UserProfile = () => {
     };
 
     const handleSubmit = async () => {
-        console.log(isChecked)
+        console.log(isChecked);
         if (!isChecked) {
-            return showToast('Please accept terms & policy');
-
-        }
-        else {
-
+            if (ToastAndroid) {
+                return showToast('Please accept terms & policy');
+            } else {
+                alert("Please Accept Terms and Policy");
+            }
+        } else {
             const formData = {
                 firstName,
                 lastName,
@@ -55,34 +62,44 @@ const UserProfile = () => {
                 phoneNumber,
                 password,
                 selectedRole
-
             };
-            console.log(formData)
+            console.log(formData);
             try {
-                // Make a POST request to your backend API
-                const response = await fetch(`${apiUrl}/addUser`, {
-                    method: 'POST',
+                // Make a POST request to your backend API using Axios
+                const response = await axios.post(`${apiUrl}/addUser`, formData, {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(formData),
                 });
-                const result = await response.json();
-                console.log(result)
+    
+                const result = response.data;
+                console.log(result);
+    
                 // Handle success
                 if (result.ok) {
                     // Show a success toast
-                    ToastAndroid.show('Record saved successfully', ToastAndroid.SHORT);
-                     navigation.navigate('Login');
-
+                    if (ToastAndroid) {
+                        ToastAndroid.show('Record saved successfully', ToastAndroid.SHORT);
+                    } else {
+                        alert('Record saved successfully');
+                    }
+                    navigation.navigate('Login');
                 } else {
                     // Show an error toast
-                    ToastAndroid.show(result.message || 'Error saving record', ToastAndroid.SHORT);
+                    if (ToastAndroid) {
+                        ToastAndroid.show(result.message || 'Error saving record', ToastAndroid.SHORT);
+                    } else {
+                        alert('Error saving record');
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
                 // Handle network error and show an error toast
-                ToastAndroid.show('Network error', ToastAndroid.SHORT);
+                if (ToastAndroid) {
+                    ToastAndroid.show('Network error', ToastAndroid.SHORT);
+                } else {
+                    alert('Network error');
+                }
             }
         }
     };
@@ -92,16 +109,42 @@ const UserProfile = () => {
     const handleNext = () => {
         // Perform validation
         if (step === 2 && (!firstName || !lastName)) {
+            if(ToastAndroid){
+
             showToast('Please enter both first and last name');
+            }
+            else {
+                alert('Please enter both first and last name');
+            }
+
         } else if (step === 3 && (!phoneCode || !phoneNumber)) {
+            if(ToastAndroid){
+
             showToast('Please enter both phone code and number');
+            }
+            else {
+                alerts('Please enter both phone code and number');
+            }
+
         } else if (step === 4 && !email) {
+            if(ToastAndroid){
             showToast('Please enter your email address');
+            }
+            else {
+                alerts('Please enter your email address');
+
+            }
         } else if (step === 5 && !password) {
             showToast('Please enter your password');
         }
         else if (step === 6 && !selectedRole) {
-            showToast('Please select your role');
+            if(ToastAndroid){
+                showToast('Please select your role');
+            }
+                else {
+                    alerts('Please select your role')
+    
+                }
         }
 
         else {

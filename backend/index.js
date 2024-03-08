@@ -28,7 +28,7 @@ db.connect((err) => {
     }
 });
 app.use(cors({
-    origin: ["http://192.168.100.127:3304"],
+    origin: "*",
     methods: ["POST", "GET"],
     credentials: true
 }))
@@ -220,25 +220,30 @@ app.post('/deleteComment', async (req, res) => {
 
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
-
     // Perform a query to check if the email and password match a user in the database
-    const query = 'SELECT * FROM tbl_user WHERE email = ? AND password = ?';
-    db.query(query, [email, password], (err, results) => {
+    const query = 'SELECT * FROM tbl_user WHERE email = ?';
+    db.query(query, [email], (err, results) => {
         if (err) {
             console.error('Error executing query:', err);
-            res.status(500).json({ message: 'Internal Server Error' });
-        } else {
-            if (results.length > 0) {
-                // Valid login credentials
-                console.log(results[0].id)
-                res.json({ message: 'Login successful', user: results[0] });
-            } else {
-                // Invalid login credentials
-                res.status(401).json({ message: 'Invalid email or password' });
-            }
+            return res.status(500).json({ message: 'Internal Server Error' });
         }
+
+        if (results.length === 0) {
+            return res.status(401).json({ message: results[0] });
+        }
+
+        const user = results[0];
+        // Compare hashed password with provided password
+        if (user.password !== password) {
+            return res.status(401).json({ message: results[0]});
+        }
+
+        // Valid login credentials
+        console.log(user.id);
+        res.json({ message: 'Login successful', user });
     });
 });
+
 
 function query(sql, params) {
     return new Promise((resolve, reject) => {

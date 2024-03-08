@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, ToastAndroid ,PermissionsAndroid } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { View, Text, TextInput, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons'; // Import Ionicons from Expo for the 3-dot icon
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { CheckBox } from 'react-native-elements';
 import apiUrl from './apiUrl';
+import axios from 'axios';
 
-// import { launchImageLibrary } from 'react-native-image-picker';
-import { launchImageLibraryAsync,downloadAsync } from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
-import * as ImagePicker from 'expo-image-picker';
+let ToastAndroid;
+if (Platform.OS === 'android') {
+    ToastAndroid = require('react-native').ToastAndroid;
+}
 
-const AddGame = ({ navigation, route:routeProp }) => {
+const AddGame = ({ navigation, route: routeProp }) => {
     const [menuVisible, setMenuVisible] = useState(false);
     const userName = useState(routeProp.params.user.firstname);
 
@@ -41,11 +41,6 @@ const AddGame = ({ navigation, route:routeProp }) => {
     const [imageUrl, setImageUrl] = useState('');
     const [isChecked, setIsChecked] = useState(false)
 
-    const CustomToast = ({ message, backgroundColor }) => (
-        <View style={{ backgroundColor, padding: 10, borderRadius: 5 }}>
-            <Text>{message}</Text>
-        </View>
-    );
     const showToast = (message) => {
         ToastAndroid.showWithGravityAndOffset(
             message,
@@ -59,18 +54,21 @@ const AddGame = ({ navigation, route:routeProp }) => {
     };
     //saving the video game  details into database
     const handleSubmit = async () => {
-        console.log(isChecked)
+        console.log(isChecked);
         let userID = routeProp.params.user.id;
         let latitude = routeProp.params.latitude;
         let longitude = routeProp.params.longitute;
-        console.log('latitude'+latitude)
-        console.log('longitude'+longitude)
-        console.log('imageUrl'+imageUrl)
+        console.log('latitude' + latitude);
+        console.log('longitude' + longitude);
+        console.log('imageUrl' + imageUrl);
 
         if (!isChecked) {
-            return showToast('Please accept terms & policy');
-        }
-        else {
+            if (ToastAndroid) {
+                return showToast('Please accept terms & policy');
+            } else {
+                alert("Please Accept Terms and Policy");
+            }
+        } else {
             const formData = {
                 gameName,
                 year,
@@ -78,33 +76,43 @@ const AddGame = ({ navigation, route:routeProp }) => {
                 latitude,
                 longitude,
                 userID
-
             };
-            console.log(formData)
+            console.log(formData);
             try {
-                // Make a POST request to your backend API
-                const response = await fetch(`${apiUrl}/addVideo`, {
-                    method: 'POST',
+                // Make a POST request to your backend API using Axios
+                const response = await axios.post(`${apiUrl}/addVideo`, formData, {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(formData),
                 });
-                const result = await response.json();
-                console.log(result)
+
+                const result = response.data;
+                console.log(result);
+
                 // Handle success
                 if (result.ok) {
-                    ToastAndroid.show('Record saved successfully', ToastAndroid.SHORT);
+                    if (ToastAndroid) {
+                        ToastAndroid.show('Record saved successfully', ToastAndroid.SHORT);
+                    } else {
+                        alert('Record saved successfully');
+                    }
                     navigation.navigate('MainPage', { user: routeProp.params.user });
-
                 } else {
                     // Show an error toast
-                    ToastAndroid.show(result.message || 'Error saving record', ToastAndroid.SHORT);
+                    if (ToastAndroid) {
+                        ToastAndroid.show(result.message || 'Error saving record', ToastAndroid.SHORT);
+                    } else {
+                        alert('Error saving record');
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
                 // Handle network error and show an error toast
-                ToastAndroid.show('Network error', ToastAndroid.SHORT);
+                if (ToastAndroid) {
+                    ToastAndroid.show('Network error', ToastAndroid.SHORT);
+                } else {
+                    alert('Network error');
+                }
             }
         }
     };
@@ -118,11 +126,28 @@ const AddGame = ({ navigation, route:routeProp }) => {
     const handleNext = () => {
         // Perform validation
         if (step === 2 && (!gameName)) {
-            showToast('Please enter both game name');
+            if (ToastAndroid) {
+
+                showToast('Please enter both game name');
+            }
+            else {
+                alert('Please enter both game name');
+            }
         } else if (step === 3 && !year) {
-            showToast('Please enter year');
+            if (ToastAndroid) {
+                showToast('Please enter year');
+            }
+            else {
+                alert('Please enter year')
+            }
         } else if (step === 4 && !imageUrl) {
-            showToast('Please add image url');
+            if (ToastAndroid) {
+                showToast('Please add image url');
+            }
+            else {
+                alert('Please add image url')
+
+            }
         } else {
             // Proceed to the next step if validation passes
             setStep(step + 1);
@@ -153,7 +178,7 @@ const AddGame = ({ navigation, route:routeProp }) => {
     //         allowsEditing: true,
     //         quality: 1,
     //     });
-    
+
     //     if (!result.cancelled && result.assets.length > 0) {
     //         try {
     //             const uri = result.assets[0].uri;

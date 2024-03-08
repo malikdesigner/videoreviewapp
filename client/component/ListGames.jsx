@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Modal, StyleSheet, Image, TextInput, Button } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Modal, StyleSheet, Image, Platform, TextInput, Button, ScrollView } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons'; // Import FontAwesome from Expo for stars
 import apiUrl from './apiUrl';
 import axios from 'axios';
-
+let ToastAndroid;
+if (Platform.OS === 'android') {
+    ToastAndroid = require('react-native').ToastAndroid;
+}
 const ListGames = ({ usersData }) => {
     //console.log(user)
     const [gameData, setGameData] = useState([]);
@@ -64,99 +67,134 @@ const ListGames = ({ usersData }) => {
             itemRating,
             rating
         };
-        console.log(formData)
+        console.log(formData);
         try {
-            // Make a POST request to your backend API
-            const response = await fetch(`${apiUrl}/addRating`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-            const result = await response.json();
-            console.log(result)
+            // Make a POST request to your backend API using Axios
+            const response = await axios.post(`${apiUrl}/addRating`, formData);
+
+            const result = response.data;
+            console.log(result);
+
             // Handle success
             if (result.ok) {
-                ToastAndroid.show('Rating added successfully', ToastAndroid.SHORT);
-
+                if (ToastAndroid) {
+                    ToastAndroid.show('Rating added successfully', ToastAndroid.SHORT);
+                } else {
+                    alert('Rating added successfully');
+                }
             } else {
                 // Show an error toast
-                ToastAndroid.show(result.message || 'Error saving record', ToastAndroid.SHORT);
+                if (ToastAndroid) {
+                    ToastAndroid.show(result.message || 'Error saving record', ToastAndroid.SHORT);
+                } else {
+                    alert('Error saving record');
+                }
             }
-
+        } catch (error) {
+            console.error('Error during rating submission:', error);
+            // Handle error toast
+            if (ToastAndroid) {
+                ToastAndroid.show('Error during rating submission', ToastAndroid.SHORT);
+            } else {
+                alert('Error during rating submission');
+            }
         }
-        catch (e) {
 
-        }
-        fetchGameData()
+        fetchGameData();
         handleClosePopup();
     };
+
+
     const addComment = async (itemId, newComment) => {
         const formData = {
             itemId,
             newComment,
             user
         };
-        console.log(formData)
+        console.log(formData);
         try {
-            // Make a POST request to your backend API
-            const response = await fetch(`${apiUrl}/addComment`, {
-                method: 'POST',
+            // Make a POST request to your backend API using Axios
+            const response = await axios.post(`${apiUrl}/addComment`, formData, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData),
             });
-            const result = await response.json();
-            console.log(result)
+
+            const result = response.data;
+            console.log(result);
+
             // Handle success
             if (result.ok) {
-                ToastAndroid.show('Comment added successfully', ToastAndroid.SHORT);
-                setNewComment('')
+                if (ToastAndroid) {
+                    ToastAndroid.show('Comment added successfully', ToastAndroid.SHORT);
+                } else {
+                    alert('Comment added successfully');
+                }
+                setNewComment('');
             } else {
                 // Show an error toast
-                ToastAndroid.show(result.message || 'Error saving record', ToastAndroid.SHORT);
+                if (ToastAndroid) {
+                    ToastAndroid.show(result.message || 'Error saving record', ToastAndroid.SHORT);
+                } else {
+                    alert('Error saving record');
+                }
+            }
+        } catch (error) {
+            console.error('Error during comment addition:', error);
+            // Handle error toast
+            if (ToastAndroid) {
+                ToastAndroid.show('Error during comment addition', ToastAndroid.SHORT);
+            } else {
+                alert('Error during comment addition');
             }
         }
-        catch (e) {
-            setNewComment('')
-        }
-        fetchGameData()
+
+        fetchGameData();
 
         setModalVisible(false); // Close the modal after adding comment
-    }
+    };
     const deleteComment = async (commentID) => {
         const formData = {
             commentID
-
         };
-        console.log(formData)
+        console.log(formData);
         try {
-            // Make a POST request to your backend API
-            const response = await fetch(`${apiUrl}/deleteComment`, {
-                method: 'POST',
+            // Make a POST request to your backend API using Axios
+            const response = await axios.post(`${apiUrl}/deleteComment`, formData, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData),
             });
-            const result = await response.json();
-            console.log(result)
+
+            const result = response.data;
+            console.log(result);
+
             // Handle success
             if (result) {
-                ToastAndroid.show('Comment deleted successfully', ToastAndroid.SHORT);
-                fetchGameData()
-
+                if (ToastAndroid) {
+                    ToastAndroid.show('Comment deleted successfully', ToastAndroid.SHORT);
+                } else {
+                    alert('Comment deleted successfully');
+                }
+                fetchGameData();
             } else {
                 // Show an error toast
-                ToastAndroid.show(result.message || 'Error saving record', ToastAndroid.SHORT);
+                if (ToastAndroid) {
+                    ToastAndroid.show(result.message || 'Error saving record', ToastAndroid.SHORT);
+                } else {
+                    alert('Error saving record');
+                }
+            }
+        } catch (error) {
+            console.error('Error during comment deletion:', error);
+            // Handle error toast
+            if (ToastAndroid) {
+                ToastAndroid.show('Error during comment deletion', ToastAndroid.SHORT);
+            } else {
+                alert('Error during comment deletion');
             }
         }
-        catch (e) { }
-        fetchGameData()
-
-    }
+    };
     const renderItem = ({ item }) => (
         <View style={{ borderBottomWidth: 1, borderColor: '#CCCCCC', paddingVertical: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10 }}>
@@ -227,15 +265,28 @@ const ListGames = ({ usersData }) => {
 
 
     return (
-        <View>
-            <FlatList
-                data={gameData}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id.toString()}
-                keyboardShouldPersistTaps="handled" // Add this prop
-                style={{ marginBottom: 30 }}
+        <>
+            {Platform.OS === 'android' || Platform.OS === 'ios' ? (
+                <View >
+                    <FlatList
+                        data={gameData}
+                        renderItem={renderItem}
+                        keyExtractor={(item) => item.id.toString()}
+                        keyboardShouldPersistTaps="handled"
+                    />
+                </View>
+            ) : (
+                <ScrollView style={{ flex: 1 }}>
+                    <FlatList
+                        data={gameData}
+                        renderItem={renderItem}
+                        keyExtractor={(item) => item.id.toString()}
+                        keyboardShouldPersistTaps="handled"
+                        style={{ marginBottom: 30 }}
+                    />
+                </ScrollView>
+            )}
 
-            />
             <Modal visible={popupVisible} transparent animationType="fade">
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
@@ -256,6 +307,8 @@ const ListGames = ({ usersData }) => {
                             <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClosePopup}>
                                 <Text style={styles.buttonText}>Cancel</Text>
                             </TouchableOpacity>
+                            <View style={{ width: 10 }} />
+
                             <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={handleSubmitRating}>
                                 <Text style={styles.buttonText}>Submit</Text>
                             </TouchableOpacity>
@@ -298,7 +351,8 @@ const ListGames = ({ usersData }) => {
                     </View>
                 </View>
             </Modal>
-        </View>
+
+        </>
 
     );
 };
@@ -360,5 +414,9 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
     },
+    commentInput: {
+        padding: 10,
+        marginBottom: 20
+    }
 })
 export default ListGames;
