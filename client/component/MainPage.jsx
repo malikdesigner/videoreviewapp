@@ -59,7 +59,7 @@ const MainPage = ({ navigation, route: routeProp }) => {
         <View style={styles.container}>
             <View style={[styles.containerTop, { backgroundColor: 'black' }]}>
                 {/* Custom top menu */}
-                <TouchableOpacity style={{ marginRight: 10 }} onPress={openMenu}>
+                <TouchableOpacity style={{ marginLeft: 10 }} onPress={openMenu}>
                     <FontAwesome5 name="bars" size={24} color="white" />
                 </TouchableOpacity>
 
