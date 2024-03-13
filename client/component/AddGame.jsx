@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { CheckBox } from 'react-native-elements';
 import apiUrl from './apiUrl';
 import axios from 'axios';
+import * as Location from 'expo-location';
 
 let ToastAndroid;
 if (Platform.OS === 'android') {
@@ -24,17 +25,14 @@ const AddGame = ({ navigation, route: routeProp }) => {
 
         }
     }
-
-
-    // const route = useRoute();
-    // const userName = routeProp.params.user.firstname;
-
-
-    console.log(userName)
     const handleSignOut = () => {
         // Navigate to the login screen or any other screen as needed
         navigation.navigate('Login');
     };
+    
+    // const route = useRoute();
+    // const userName = routeProp.params.user.firstname;
+
     const [step, setStep] = useState(2);
     const [gameName, setGameName] = useState('');
     const [year, setYear] = useState('');
@@ -50,17 +48,53 @@ const AddGame = ({ navigation, route: routeProp }) => {
             50,
             ToastAndroid.CENTER,
             ToastAndroid.WHITE
-        );
+            );
+        };
+        const getLocationAsync = async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                console.error('Location permission not granted');
+                return;
+            }
+    
+            let location = await Location.getCurrentPositionAsync({});
+          return location;
+    
+           // console.log('Current location:', location.coords);
+        };
+      const getLocationAddress = async (latitude, longitude) => {
+        //let urlLInk="https://geocode.maps.co/join/"; //get a new api key from here
+
+        try {
+            const response = await fetch(`https://geocode.maps.co/reverse?lat=${latitude}&lon=${longitude}&api_key=65f19c0f3d28a781617842xtsaa8667`);
+          
+            const data = await response.json();
+
+            // Log the response to understand its structure
+            console.log(data);
+
+            if (data && data.display_name) {
+                // Extract the formatted address from the response
+                const address =  data.address.city+', '+ data.address.country;
+                return address;
+            } else {
+                console.error('Geocoding request failed:', data);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error fetching geocoding data:', error);
+            return null;
+        }
     };
+
     //saving the video game  details into database
     const handleSubmit = async () => {
         console.log(isChecked);
         let userID = routeProp.params.user.id;
-        let latitude = routeProp.params.latitude;
-        let longitude = routeProp.params.longitute;
-        console.log('latitude' + latitude);
-        console.log('longitude' + longitude);
-        console.log('imageUrl' + imageUrl);
+        let location = await getLocationAsync(); // Await the result of getLocationAsync()
+        console.log(location);
+        let address = await getLocationAddress(location.coords.latitude, location.coords.longitude); // Await the result of getLocationAddress() as well
+        console.log(address);
 
         if (!isChecked) {
             if (ToastAndroid) {
@@ -73,8 +107,7 @@ const AddGame = ({ navigation, route: routeProp }) => {
                 gameName,
                 year,
                 imageUrl,
-                latitude,
-                longitude,
+                address,
                 userID
             };
             console.log(formData);

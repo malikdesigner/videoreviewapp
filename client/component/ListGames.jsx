@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, FlatList, Modal, StyleSheet, Image, Platf
 import { FontAwesome } from '@expo/vector-icons'; // Import FontAwesome from Expo for stars
 import apiUrl from './apiUrl';
 import axios from 'axios';
+import * as Location from 'expo-location';
+
 let ToastAndroid;
 if (Platform.OS === 'android') {
     ToastAndroid = require('react-native').ToastAndroid;
@@ -31,6 +33,7 @@ const ListGames = ({ usersData }) => {
             console.error('Error fetching travel data:', error);
         }
     };
+
     // console.log(gameData[0].comments)
     const [rating, setRating] = useState(0);
     const [selectedItemId, setSelectedItemId] = useState(null);
@@ -39,6 +42,42 @@ const ListGames = ({ usersData }) => {
     const [popupVisible, setPopupVisible] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedGameId, setSelectedGameId] = useState(null);
+const getLocationAsync = async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                console.error('Location permission not granted');
+                return;
+            }
+    
+            let location = await Location.getCurrentPositionAsync({});
+          return location;
+    
+           // console.log('Current location:', location.coords);
+        };
+      const getLocationAddress = async (latitude, longitude) => {
+        //let urlLInk="https://geocode.maps.co/join/"; //get a new api key from here
+
+        try {
+            const response = await fetch(`https://geocode.maps.co/reverse?lat=${latitude}&lon=${longitude}&api_key=65f19c0f3d28a781617842xtsaa8667`);
+          
+            const data = await response.json();
+
+            // Log the response to understand its structure
+            console.log(data);
+
+            if (data && data.display_name) {
+                // Extract the formatted address from the response
+                const address =  data.address.city+', '+ data.address.country;
+                return address;
+            } else {
+                console.error('Geocoding request failed:', data);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error fetching geocoding data:', error);
+            return null;
+        }
+    };
 
     const handleStarPress = (index) => {
         setRating(index + 1);
@@ -106,10 +145,15 @@ const ListGames = ({ usersData }) => {
 
 
     const addComment = async (itemId, newComment) => {
+        let location = await getLocationAsync(); // Await the result of getLocationAsync()
+        console.log(location);
+        let address = await getLocationAddress(location.coords.latitude, location.coords.longitude); // Await the result of getLocationAddress() as well
+        console.log(address);
         const formData = {
             itemId,
             newComment,
-            user
+            user,
+            location:address
         };
         console.log(formData);
         try {
@@ -205,6 +249,7 @@ const ListGames = ({ usersData }) => {
                 <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 20 }}>{item.name}</Text>
                     <Text>Year: {item.year}</Text>
+                    <Text>Added From: {item.location}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                     <TouchableOpacity style={styles.rateButton} onPress={() => handleRate(item.id, item.rating)}>
@@ -237,6 +282,7 @@ const ListGames = ({ usersData }) => {
                         {/* Column for comment */}
                         <View style={{ flex: 4 }}>
                             <Text>{comment.comment}</Text>
+                            <Text style={{marginTop:5}}>{comment.commentLocation}</Text>
                         </View>
                         {usersData.role === 'moderator' && (
                             <View style={{ flex: 1 }}>
@@ -247,15 +293,7 @@ const ListGames = ({ usersData }) => {
                         )}
                     </View>
                 ))}
-                {/* Input for adding new comment */}
-                {/* <View style={{ paddingHorizontal: 10 }}>
-                    <TextInput
-                        placeholder="Add a comment..."
-                        value={newComment}
-                        onChangeText={setNewComment}
-                        onSubmitEditing={() => addComment(item.id, newComment)}
-                    />
-                </View> */}
+               
                 <Button color='black' title="Add Comment" onPress={() => { setSelectedGameId(item.id); setModalVisible(true); }} />
 
             </View>

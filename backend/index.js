@@ -72,18 +72,17 @@ app.post('/addVideo', async (req, res) => {
             gameName,
             year,
             imageUrl,
-            latitude,
-            longitude,
+            address,
             userID
         } = req.body;
         console.log(req.body)
-        const location = latitude + '|' + longitude;
+        // const location = latitude + '|' + longitude;
         const currentDate = new Date().toISOString(); // Get current date in ISO format
 
         const sql = `INSERT INTO tbl_vide_games (name, year, image,location, added_by, date_added) 
                     VALUES (?, ?, ?, ?, ?, ?)`;
 
-        const result = await query(sql, [gameName, year, imageUrl, location, userID, currentDate]);
+        const result = await query(sql, [gameName, year, imageUrl, address, userID, currentDate]);
 
         console.log('Record inserted successfully');
         res.status(200).json({ ok: true, message: 'Record inserted successfully' });
@@ -132,8 +131,10 @@ app.get('/getGameData', async (req, res) => {
                 g.year,
                 g.image,
                 g.rating,
+                g.location,
                 c.id AS comment_id,
                 c.comment,
+                c.commentLocation,
                 u.firstname
             FROM 
                 tbl_vide_games AS g
@@ -153,12 +154,12 @@ app.get('/getGameData', async (req, res) => {
 
         // Group comments by game ID
         const groupedData = gameData.reduce((acc, item) => {
-            const { id, name, year, image, rating } = item;
+            const { id, name, year, image, rating, location } = item;
             if (!acc[id]) {
-                acc[id] = { id, name, year, image, rating, comments: [] };
+                acc[id] = { id, name, year, image, rating, location, comments: [] };
             }
             if (item.comment_id) {
-                acc[id].comments.push({ id: item.comment_id, comment: item.comment, firstname: item.firstname });
+                acc[id].comments.push({ id: item.comment_id, comment: item.comment, firstname: item.firstname,commentLocation:item.commentLocation });
             }
             return acc;
         }, {});
@@ -177,14 +178,14 @@ app.post('/addComment', async (req, res) => {
         console.log("REQUEST");
         console.log(req.body);
 
-        const { itemId, newComment, user } = req.body;
+        const { itemId, newComment, user, location } = req.body;
         const currentDate = new Date().toISOString(); // Get current date in ISO format
 
         // Prepare the SQL query to add new comment of the selected item
-        const sql = `INSERT INTO tbl_comments (comment, added_by, gameId, date_added) 
-                    VALUES (?, ?, ?, ?)`;
+        const sql = `INSERT INTO tbl_comments (comment, added_by, gameId, date_added,commentLocation) 
+                    VALUES (?, ?, ?, ?,?)`;
 
-        const result = await query(sql, [newComment, user, itemId, currentDate]);
+        const result = await query(sql, [newComment, user, itemId, currentDate, location]);
 
         console.log('Comment added successfully');
         res.status(200).json({ ok: true, message: 'comment added successfully' });
@@ -235,7 +236,7 @@ app.post('/login', (req, res) => {
         const user = results[0];
         // Compare hashed password with provided password
         if (user.password !== password) {
-            return res.status(401).json({ message: results[0]});
+            return res.status(401).json({ message: results[0] });
         }
 
         // Valid login credentials
